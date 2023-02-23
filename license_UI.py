@@ -85,9 +85,16 @@ if __name__=='__main__':
                     "validity":iter_deviceInfo["validity"],
                     "wanIFName":[]
                     }
+                    
+                    wanIFName = getData.getWANIfName(vmanage_host,vmanage_port,header,iter_deviceInfo["system-ip"])
 
+                    for iter_wanIFName in wanIFName:
 
-        print(deviceInfo_data["20"]["20.20.20.1"])
+                        #if have a sub-interface strip the sub-interface tag
+                        TransportIfName = re.split(r"\.", iter_wanIFName["interface"])[0]
+                        # append the interface name to deviceInfo_data
+                        if TransportIfName not in deviceInfo_data[iter_deviceInfo["site-id"]][iter_deviceInfo["system-ip"]]["wanIFName-stats"]:
+                            deviceInfo_data[iter_deviceInfo["site-id"]][iter_deviceInfo["system-ip"]]["wanIFName-stats"][TransportIfName]=[]
 
 
 

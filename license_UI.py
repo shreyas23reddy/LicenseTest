@@ -14,6 +14,7 @@ from auth_header import Authentication as auth
 from operations import Operation
 from license_class_UI import getData
 from license_class_UI import postData
+from license_class_UI import findTlocExt
 from query import queryPayload
 
 
@@ -42,7 +43,8 @@ if __name__=='__main__':
         sid = subparser.add_parser('sid')
 
 
-        sid.add_argument('-id', nargs = '+', required=True)
+        sid.add_argument('-id', nargs = '+', required=True, help= "-id 10 20 30")
+        sid.add_argument('-tlocext',choices=["yes","no"],default="no",help = "will help identifying the TLOCEXT interface 'yes/no'")
 
 
         args = parser.parse_args()
@@ -60,7 +62,7 @@ if __name__=='__main__':
         deviceInfo_data = {}
 
         now = datetime.now()
-        print(args.id)
+
 
         for site_id in args.id:
 
@@ -68,7 +70,10 @@ if __name__=='__main__':
             deviceInfo = getData.getDeviceIP(vmanage_host,vmanage_port,header,site_id)
 
             if deviceInfo == []:
-                print(f"""please verify if the site-id {site_id} is valid""")
+                print(f"""
+                please verify if the site-id {site_id} is valid
+                """)
+
             else:
                 for iter_deviceInfo in deviceInfo:
 
@@ -77,25 +82,40 @@ if __name__=='__main__':
                     if iter_deviceInfo["system-ip"] not in deviceInfo_data[iter_deviceInfo["site-id"]]:
                         deviceInfo_data[iter_deviceInfo["site-id"]][iter_deviceInfo["system-ip"]] = {}
 
-
                     deviceInfo_data[iter_deviceInfo["site-id"]][iter_deviceInfo["system-ip"]] = {
                     "host-name":iter_deviceInfo["host-name"],
                     "uuid":iter_deviceInfo["uuid"],
                     "reachability":iter_deviceInfo["reachability"],
                     "validity":iter_deviceInfo["validity"],
-                    "wanIFName":[]
+                    "wanIFName-stats":{},
+                    "TlocEXT-IfName":[]
                     }
-                    
+
+
                     wanIFName = getData.getWANIfName(vmanage_host,vmanage_port,header,iter_deviceInfo["system-ip"])
 
                     for iter_wanIFName in wanIFName:
 
                         #if have a sub-interface strip the sub-interface tag
-                        TransportIfName = re.split(r"\.", iter_wanIFName["interface"])[0]
+                        #TransportIfName = re.split(r"\.", iter_wanIFName["interface"])[0]
+                        TransportIfName = (iter_wanIFName["interface"])
                         # append the interface name to deviceInfo_data
                         if TransportIfName not in deviceInfo_data[iter_deviceInfo["site-id"]][iter_deviceInfo["system-ip"]]["wanIFName-stats"]:
                             deviceInfo_data[iter_deviceInfo["site-id"]][iter_deviceInfo["system-ip"]]["wanIFName-stats"][TransportIfName]=[]
 
+                if (len(deviceInfo_data[site_id])) == 2 and args.tlocext == "yes":
+                    deviceInfo_data = findTlocExt.findIfTlocext(vmanage_host,vmanage_port,header,deviceInfo_data,site_id)
+
+
+
+
+
+
+
+
+
+
+        print(deviceInfo_data)
 
 
         exit()

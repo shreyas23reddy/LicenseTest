@@ -55,14 +55,23 @@ class postData():
 
 class findTlocExt():
 
+    """
+    will identify TLOC EXT interface only when the interface is directly connected.
+    we are comparing the ARP dynamic address with static address on the remote side
+    to identify if the interface is extended using TLOC ext or not
+    """
+
     def findIfTlocext(vmanage_host,vmanage_port,header,deviceInfo_data,site_id):
+
         getARP_edge1 = getData.getARP(vmanage_host,vmanage_port,header,(list((deviceInfo_data[site_id]).keys()))[0])
         getARP_edge2 = getData.getARP(vmanage_host,vmanage_port,header,(list((deviceInfo_data[site_id]).keys()))[1])
+
+
         for iter_edge1_ARP in getARP_edge1:
             if ((iter_edge1_ARP["vpn-id"] == "Default") or (iter_edge1_ARP["vpn-id"] == "0")) and (iter_edge1_ARP["mode"] == "ios-arp-mode-dynamic"):
                 for iter_edge2_ARP in getARP_edge2:
                     if (((((iter_edge2_ARP["vpn-id"] == "Default") or (iter_edge2_ARP["vpn-id"] == "0")) and (iter_edge2_ARP["mode"] == "ios-arp-mode-interface")) and iter_edge1_ARP["hardware"] == iter_edge2_ARP["hardware"] ) and iter_edge1_ARP["address"] == iter_edge2_ARP["address"]):
-                        if iter_edge2_ARP['interface'] not in deviceInfo_data[site_id][iter_edge2_ARP["vdevice-name"]]["wanIFName-stats"]:
+                        if iter_edge2_ARP['interface'] in deviceInfo_data[site_id][iter_edge2_ARP["vdevice-name"]]["wanIFName-stats"]:
                             deviceInfo_data[site_id][iter_edge2_ARP["vdevice-name"]]["TlocEXT-IfName"].append(iter_edge2_ARP['interface'])
 
 
@@ -70,7 +79,7 @@ class findTlocExt():
             if ((iter_edge2_ARP["vpn-id"] == "Default") or (iter_edge2_ARP["vpn-id"] == "0")) and (iter_edge2_ARP["mode"] == "ios-arp-mode-dynamic"):
                 for iter_edge1_ARP in getARP_edge1:
                     if (((((iter_edge1_ARP["vpn-id"] == "Default") or (iter_edge1_ARP["vpn-id"] == "0")) and (iter_edge1_ARP["mode"] == "ios-arp-mode-interface")) and iter_edge2_ARP["hardware"] == iter_edge1_ARP["hardware"] ) and iter_edge2_ARP["address"] == iter_edge1_ARP["address"]):
-                        if iter_edge1_ARP['interface'] not in deviceInfo_data[site_id][iter_edge1_ARP["vdevice-name"]]["wanIFName-stats"]:
+                        if iter_edge1_ARP['interface'] in deviceInfo_data[site_id][iter_edge1_ARP["vdevice-name"]]["wanIFName-stats"]:
                             deviceInfo_data[site_id][iter_edge1_ARP["vdevice-name"]]["TlocEXT-IfName"].append(iter_edge1_ARP['interface'])
 
         return deviceInfo_data
